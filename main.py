@@ -24,39 +24,40 @@ ground_surface = pygame.image.load("graphics/ground.png").convert()
 snail_surface = pygame.image.load("graphics/snail/snail1.png").convert_alpha()
 snail_rect = snail_surface.get_rect(midbottom=(600, 300))
 
-# load player
+# Load player
 surface_player = pygame.image.load("graphics/Player/player_walk_1.png").convert_alpha()
 player_rect = surface_player.get_rect(midbottom=(80, 300))
 player_gravity = 0
 
+# Game states
+game_active = True
+game_over = False
+
 # Game loop
-running = True
-while running:
+while game_active:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            game_active = False
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                if player_rect.bottom >= 300:
-                    player_gravity = -12
+            if event.key == pygame.K_SPACE and player_rect.bottom >= 300 and not game_over:
+                player_gravity = -12
 
+    if not game_over:
+        # Collision
+        if player_rect.colliderect(snail_rect):
+            game_over = True
 
-    #collision
-    if player_rect.colliderect(snail_rect):
-        pygame.quit()
-        exit()
+        # Update game elements
+        snail_rect.x -= 4
+        if snail_rect.right <= 0:
+            snail_rect.left = WIDTH
 
-    # Update game elements
-    snail_rect.x -= 4
-    if snail_rect.right <= 0:
-        snail_rect.left = WIDTH
-
-    # Player
-    player_gravity += 0.5
-    player_rect.y += player_gravity
-    if player_rect.bottom >= 300:
-        player_rect.bottom = 300
+        # Player
+        player_gravity += 0.5
+        player_rect.y += player_gravity
+        if player_rect.bottom >= 300:
+            player_rect.bottom = 300
 
     # Draw elements
     screen.blit(sky_surface, (0, 0))
@@ -66,8 +67,22 @@ while running:
     screen.blit(surface_player, player_rect)
     screen.blit(snail_surface, snail_rect)
 
+    if game_over:
+        # Game over screen
+        game_over_surface = game_font.render("Game Over", True, "Black")
+        game_over_rect = game_over_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        screen.blit(game_over_surface, game_over_rect)
+
     pygame.display.update()
     clock.tick(60)
+
+    # Restart the game if space is pressed after game over
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_SPACE] and game_over:
+        game_over = False
+        player_rect.midbottom = (80, 300)
+        snail_rect.midbottom = (WIDTH, 300)
+        player_gravity = 0
 
 pygame.quit()
 exit()
